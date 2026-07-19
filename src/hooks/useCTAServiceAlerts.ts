@@ -7,19 +7,23 @@ export const useCTAServiceAlerts = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchAlerts = () => {
-      setError(null);
+  const fetchAlerts = (isInitialLoad: boolean) => {
+    setError(null);
+
+    // Only set loading state to true on initial mount
+    if (isInitialLoad) {
       setIsLoading(true);
+    }
 
-      setTimeout(() => {
-        setAlerts(MOCK_CTA_ALERTS);
-        setIsLoading(false);
-      }, 800);
-    };
+    setTimeout(() => {
+      setAlerts(MOCK_CTA_ALERTS);
+      setIsLoading(false);
+    }, 800);
+  };
 
-    fetchAlerts();
-    const intervalId = window.setInterval(fetchAlerts, 10000);
+  useEffect(() => {
+    fetchAlerts(true);
+    const intervalId = window.setInterval(() => fetchAlerts(false), 10000);
 
     // Clean up interval on unmount
     return () => clearInterval(intervalId);
