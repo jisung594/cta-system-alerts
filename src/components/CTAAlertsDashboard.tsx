@@ -111,6 +111,8 @@ const CTAAlertsDashboard = () => {
     <main className="min-h-screen bg-slate-50 text-slate-900">
       <div className="mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+
+          {/* Header */}
           <div className="flex flex-col gap-3 border-b border-slate-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-500">
@@ -121,8 +123,106 @@ const CTAAlertsDashboard = () => {
               </h1>
             </div>
             <p className="text-sm font-medium text-slate-600">
-              Live Data Panel
+              Live Data — Updated at {timestamp}
             </p>
+          </div>
+
+          {/* Metrics Summary */}
+          <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="rounded-lg border border-slate-200 bg-slate-950 p-4 text-slate-50">
+              <p className="text-sm text-slate-400">Total Active Alerts</p>
+              <p className="mt-2 text-3xl font-semibold">{totalAlerts}</p>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-white p-4">
+              <p className="text-sm text-slate-500">Critical Disruptions</p>
+              <p className="mt-2 text-3xl font-semibold text-rose-600">{criticalDisruptions}</p>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-white p-4">
+              <p className="text-sm text-slate-500">Affected Lines</p>
+              <p className="mt-2 text-3xl font-semibold text-slate-900">{affectedLines}</p>
+            </div>
+          </div>
+
+          {/* Search & Filter */}
+          <div className="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <label className="flex-1">
+                <span className="sr-only">Search alerts</span>
+                <input
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Search station names or headlines"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none ring-0 transition focus:border-slate-500"
+                />
+              </label>
+
+              <div className="flex flex-wrap gap-2">
+                {(['Red', 'Blue', 'Brown', 'Green', 'Orange', 'Purple', 'Pink', 'Yellow'] as CTALine[]).map((line) => {
+                  const isActive = selectedLines.includes(line);
+                  const styles = LINE_STYLES[line];
+
+                  return (
+                    <button
+                      key={line}
+                      type="button"
+                      onClick={() => toggleLine(line)}
+                      className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${
+                        isActive ? styles.active : styles.base
+                      }`}
+                    >
+                      <span className={`mr-2 inline-block h-2.5 w-2.5 rounded-full ${styles.dot}`} />
+                      {line}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Two-column layout for charts and alerts list */}
+          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-1">
+              <div className="flex h-64 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400">
+                Recharts Analytics Placeholder
+              </div>
+            </div>
+
+            <div className="lg:col-span-2">
+              <div className="flex max-h-[48rem] flex-col gap-4 overflow-y-auto pr-1">
+                {filteredAlerts.map((alert) => {
+                  const primaryLine = alert.impactedServices.find((service) => service.lineColor)?.lineColor;
+                  const accentClass = primaryLine ? LINE_STYLES[primaryLine].dot : 'bg-slate-400';
+
+                  return (
+                    <article
+                      key={alert.id}
+                      className="relative overflow-hidden rounded-lg border border-slate-200 bg-white p-4 pl-6 shadow-sm"
+                    >
+                      <div className={`absolute left-0 top-0 bottom-0 w-2 ${accentClass}`}/>
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <h2 className="text-lg font-semibold text-slate-900">{alert.headline}</h2>
+                          <p className="mt-2 text-sm leading-6 text-slate-600">{alert.shortDescription}</p>
+                        </div>
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold uppercase ${SEVERITY_STYLES[alert.severity]}`}>
+                          {alert.severity}
+                        </span>
+                      </div>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {alert.impactedServices.map((service) => (
+                          <span
+                            key={`${alert.id}-${service.routeId}`}
+                            className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600"
+                          >
+                            {service.routeName}
+                          </span>
+                        ))}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </section>
       </div>
