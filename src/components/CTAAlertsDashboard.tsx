@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { MOCK_CTA_ALERTS } from '../data/mockAlerts';
 import type { CTALine } from '../types/alerts';
 
@@ -54,6 +54,58 @@ const SEVERITY_STYLES: Record<string, string> = {
 const CTAAlertsDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLines, setSelectedLines] = useState<CTALine[]>([]);
+
+  // Filter alerts based on search term and selected lines
+  const filteredAlerts = useMemo(() => {
+    const normalizedQuery = searchTerm.trim().toLowerCase();
+
+    return MOCK_CTA_ALERTS.filter((alert) => {
+      const searchableText = [
+        alert.headline,
+        alert.shortDescription,
+        alert.fullDescription,
+        ...alert.impactedServices.map((service) => service.routeName),
+      ]
+        .join(' ')
+        .toLowerCase();
+
+      const matchesText = normalizedQuery.length === 0 || searchableText.includes(normalizedQuery);
+      const matchesLines =
+        selectedLines.length === 0 ||
+        alert.impactedServices.some((service) => service.lineColor && selectedLines.includes(service.lineColor));
+
+      return matchesText && matchesLines;
+    });
+  }, [searchTerm, selectedLines]);
+
+  // Calculate summary statistics
+  const totalAlerts = filteredAlerts.length;
+  const criticalDisruptions = filteredAlerts.filter((alert) => alert.severity === 'critical').length;
+  const affectedLines = useMemo(() => {
+    const lineSet = new Set<CTALine>();
+
+    // Collect unique line colors
+    filteredAlerts.forEach((alert) => {
+      alert.impactedServices.forEach((service) => {
+        if (service.lineColor) {
+          lineSet.add(service.lineColor);
+        }
+      });
+    });
+
+    return lineSet.size;
+  }, [filteredAlerts]);
+
+  const timestamp = new Date().toLocaleTimeString([], {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+
+  const toggleLine = (line: CTALine) => {
+    setSelectedLines((current) =>
+      current.includes(line) ? current.filter((value) => value !== line) : [...current, line],
+    );
+  };
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
