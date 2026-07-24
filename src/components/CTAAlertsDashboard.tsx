@@ -188,7 +188,7 @@ const CTAAlertsDashboard = () => {
             </div>
 
             <div className="lg:col-span-2">
-              <div className="flex max-h-[48rem] flex-col gap-4 overflow-y-auto pr-1">
+              <div className="flex flex-col gap-4 overflow-y-auto pr-1">
                 {filteredAlerts.map((alert) => {
                   const primaryLine = alert.impactedServices.find((service) => service.lineColor)?.lineColor;
                   const accentClass = primaryLine ? LINE_STYLES[primaryLine].dot : 'bg-slate-400';
