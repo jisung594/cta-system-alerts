@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { MOCK_CTA_ALERTS } from '../data/mockAlerts';
-import type { CTALine } from '../types/alerts';
-import { aggregateAlertsByLine } from '../utils/chartHelpers';
-import { AlertsBarChart } from './AlertsBarChart/AlertsBarChart';
+import { MOCK_CTA_ALERTS } from '../../data/mockAlerts';
+import type { CTALine } from '../../types/alerts';
+import { aggregateAlertsByLine } from '../../utils/chartHelpers';
+import { AlertsBarChart } from '../AlertsBarChart/AlertsBarChart';
 
 const LINE_STYLES: Record<CTALine, { base: string; active: string; dot: string }> = {
   Red: {
