@@ -19,3 +19,9 @@ export interface CTAServiceAlert {
   eventStart: string;
   eventEnd: string | null;
 }
+
+export interface LineAlertData {
+  line: CTALine;
+  count: number;
+  color: string;
+}

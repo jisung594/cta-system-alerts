@@ -1,10 +1,4 @@
-import type { CTAServiceAlert, CTALine } from '../types/alerts';
-
-export interface LineAlertData {
-  line: CTALine;
-  count: number;
-  color: string;
-}
+import type { CTAServiceAlert, CTALine, LineAlertData } from '../types/alerts';
 
 // Hex palette mapped to CTA line colors
 export const CTA_LINE_COLORS: Record<CTALine, string> = {
