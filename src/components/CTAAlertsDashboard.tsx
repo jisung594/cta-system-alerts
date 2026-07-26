@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { MOCK_CTA_ALERTS } from '../data/mockAlerts';
 import type { CTALine } from '../types/alerts';
+import { aggregateAlertsByLine } from '../utils/chartHelpers';
+import { AlertsBarChart } from './AlertsBarChart/AlertsBarChart';
 
 const LINE_STYLES: Record<CTALine, { base: string; active: string; dot: string }> = {
   Red: {
@@ -107,11 +109,16 @@ const CTAAlertsDashboard = () => {
     );
   };
 
+  // Calculate chart data reactively from filtered alerts
+  const chartData = useMemo(() => {
+    return aggregateAlertsByLine(filteredAlerts);
+  }, [filteredAlerts]);
+
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
       <div className="mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-
+          
           {/* Header */}
           <div className="flex flex-col gap-3 border-b border-slate-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -182,8 +189,8 @@ const CTAAlertsDashboard = () => {
           {/* Two-column layout for charts and alerts list */}
           <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
             <div className="lg:col-span-1">
-              <div className="flex h-64 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400">
-                Recharts Analytics Placeholder
+              <div className="h-64 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <AlertsBarChart data={chartData} />
               </div>
             </div>
 
@@ -198,7 +205,7 @@ const CTAAlertsDashboard = () => {
                       key={alert.id}
                       className="relative overflow-hidden rounded-lg border border-slate-200 bg-white p-4 pl-6 shadow-sm"
                     >
-                      <div className={`absolute left-0 top-0 bottom-0 w-2 ${accentClass}`}/>
+                      <div className={`absolute left-0 top-0 bottom-0 w-2 ${accentClass}`} />
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
                           <h2 className="text-lg font-semibold text-slate-900">{alert.headline}</h2>
