@@ -1,21 +1,22 @@
-import type { LineAlertData } from '../../types/alerts';
+import { BarChart, Bar, CartesianGrid, XAxis, YAxis } from 'recharts';
 
-interface AlertsBarChartProps {
-  data: LineAlertData[];
-}
+// BarChart: provides the overall chart container and coordinate system for the bars.
+// Bar: draws each bar from the data array.
+// CartesianGrid: adds the simple background grid lines.
+// XAxis: draws the category labels along the bottom axis.
+// YAxis: draws the numeric scale along the left axis.
+
+type AlertsBarChartProps = {
+  data: Array<{ line: string; count: number }>;
+};
 
 export const AlertsBarChart = ({ data }: AlertsBarChartProps) => {
-  if (data.length === 0) {
-    return (
-      <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-slate-200 p-4 text-center text-sm text-slate-400">
-        No active alerts for selected filters
-      </div>
-    );
-  } 
-
   return (
-    <div>
-      placeholder for bar chart
-    </div>
+    <BarChart width={400} height={200} data={data}>
+      <CartesianGrid strokeDasharray="3 3" />
+      <XAxis dataKey="line" />
+      <YAxis />
+      <Bar dataKey="count" fill="#3b82f6" />
+    </BarChart>
   );
-}
+};
