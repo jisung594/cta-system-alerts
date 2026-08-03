@@ -1,4 +1,11 @@
-import { BarChart, Bar, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { 
+  BarChart, 
+  Bar, 
+  CartesianGrid,
+  ResponsiveContainer, 
+  XAxis, 
+  YAxis
+} from 'recharts';
 
 // BarChart: provides the overall chart container and coordinate system for the bars.
 // Bar: draws each bar from the data array.
@@ -12,11 +19,15 @@ type AlertsBarChartProps = {
 
 export const AlertsBarChart = ({ data }: AlertsBarChartProps) => {
   return (
-    <BarChart width={400} height={200} data={data}>
-      <CartesianGrid strokeDasharray="3 3" />
-      <XAxis dataKey="line" />
-      <YAxis />
-      <Bar dataKey="count" fill="#3b82f6" />
-    </BarChart>
+    <div className="h-64 w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="line" />
+          <YAxis />
+          <Bar dataKey="count" fill={(entry: { color: string }) => entry.color} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
   );
 };
