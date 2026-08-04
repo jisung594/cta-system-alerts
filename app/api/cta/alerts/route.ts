@@ -1,8 +1,21 @@
 import { NextResponse } from 'next/server';
 
 const CTA_ALERTS_URL = 'https://www.transitchicago.com/api/1.0/alerts.aspx?outputType=JSON';
+
 type TrainRouteCode = 'Red' | 'Blue' | 'Brn' | 'G' | 'Org' | 'Pnk' | 'P' | 'Y';
-const TRAIN_ROUTE_CODES = new Set<TrainRouteCode>(['Red', 'Blue', 'Brn', 'G', 'Org', 'Pnk', 'P', 'Y']);
+// Official CTA Route Configs: Maps route IDs to display names and brand hex colors
+const LINE_CONFIG: Record<TrainRouteCode, { name: string; color: string }> = {
+  Red: { name: 'Red Line', color: '#c0392b' },
+  Blue: { name: 'Blue Line', color: '#2980b9' },
+  Brn: { name: 'Brown Line', color: '#964B00' },
+  G: { name: 'Green Line', color: '#27ae60' },
+  Org: { name: 'Orange Line', color: '#d35400' },
+  Pnk: { name: 'Pink Line', color: '#e84393' },
+  P: { name: 'Purple Line', color: '#8e44ad' },
+  Y: { name: 'Yellow Line', color: '#f1c40f' },
+};
+
+const TRAIN_ROUTE_CODES = new Set<string>(Object.keys(LINE_CONFIG));
 
 interface CTAAlertsResponse {
   CTAAlerts?: CTAAlerts;
@@ -30,7 +43,12 @@ interface Service {
   ServiceId?: string;
 }
 
-type LineAlertSummary = Record<TrainRouteCode, number>;
+// Return contract for Frontend / Recharts
+export interface LineAlertSummary {
+  line: string;
+  count: number;
+  color: string;
+}
 
 export async function GET() {
   const controller = new AbortController();
@@ -57,7 +75,7 @@ export async function GET() {
       ? [rawAlerts]
       : [];
 
-    const tally: LineAlertSummary = {
+    const tally: Record<TrainRouteCode, number> = {
       Red: 0,
       Blue: 0,
       Brn: 0,
@@ -85,7 +103,16 @@ export async function GET() {
       });
     });
 
-    return NextResponse.json(tally);
+    // Convert tally object into Recharts-ready array
+    const formattedData: LineAlertSummary[] = (
+      Object.keys(LINE_CONFIG) as TrainRouteCode[]
+    ).map((code) => ({
+      line: LINE_CONFIG[code].name,
+      count: tally[code] || 0,
+      color: LINE_CONFIG[code].color,
+    }));
+
+    return NextResponse.json(formattedData);
   } catch (error) {
     return NextResponse.json(
       {
