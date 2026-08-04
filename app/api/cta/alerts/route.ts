@@ -1,7 +1,36 @@
 import { NextResponse } from 'next/server';
 
-const CTA_ALERTS_URL = 'https://www.transitchicago.com/api/v2/alerts.response?outputType=JSON';
-const TRAIN_ROUTE_CODES = new Set(['Red', 'Blue', 'Brn', 'G', 'Org', 'Pnk', 'P', 'Y']);
+const CTA_ALERTS_URL = 'https://www.transitchicago.com/api/1.0/alerts.aspx?outputType=JSON';
+type TrainRouteCode = 'Red' | 'Blue' | 'Brn' | 'G' | 'Org' | 'Pnk' | 'P' | 'Y';
+const TRAIN_ROUTE_CODES = new Set<TrainRouteCode>(['Red', 'Blue', 'Brn', 'G', 'Org', 'Pnk', 'P', 'Y']);
+
+interface CTAAlertsResponse {
+  CTAAlerts?: CTAAlerts;
+}
+
+interface CTAAlerts {
+  Alert?: CTAAlert | CTAAlert[];
+}
+
+interface CTAAlert {
+  AlertId: string;
+  Headline?: string;
+  ShortDescription?: string;
+  ImpactedService?: ImpactedService;
+}
+
+interface ImpactedService {
+  Service?: Service | Service[];
+}
+
+interface Service {
+  ServiceType?: 'R' | 'T' | 'B' | string; // 'R' = Route, 'T' = Station, 'B' = Bus
+  ServiceTypeDescription?: string;
+  ServiceName?: string;
+  ServiceId?: string;
+}
+
+type LineAlertSummary = Record<TrainRouteCode, number>;
 
 export async function GET() {
   const controller = new AbortController();
@@ -20,15 +49,15 @@ export async function GET() {
       );
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as CTAAlertsResponse;
     const rawAlerts = data?.CTAAlerts?.Alert;
-    const alerts = Array.isArray(rawAlerts)
+    const alerts: CTAAlert[] = Array.isArray(rawAlerts)
       ? rawAlerts
       : rawAlerts
       ? [rawAlerts]
       : [];
 
-    const tally = {
+    const tally: LineAlertSummary = {
       Red: 0,
       Blue: 0,
       Brn: 0,
@@ -39,7 +68,7 @@ export async function GET() {
       Y: 0,
     };
 
-    alerts.forEach((alert: any) => {
+    alerts.forEach((alert) => {
       const impactedService = alert?.ImpactedService;
       const services = impactedService?.Service;
       const serviceList = Array.isArray(services)
@@ -48,9 +77,10 @@ export async function GET() {
         ? [services]
         : [];
 
-      serviceList.forEach((service: any) => {
-        if (service?.ServiceType === 'R' && TRAIN_ROUTE_CODES.has(service?.ServiceId)) {
-          tally[service.ServiceId as keyof typeof tally] += 1;
+      serviceList.forEach((service) => {
+        const serviceId = service?.ServiceId;
+        if (service?.ServiceType === 'R' && serviceId && TRAIN_ROUTE_CODES.has(serviceId as TrainRouteCode)) {
+          tally[serviceId as TrainRouteCode] += 1;
         }
       });
     });
