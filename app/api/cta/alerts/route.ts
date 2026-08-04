@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const CTA_ALERTS_URL = 'https://www.transitchicago.com/api/v2/alerts.response?outputType=JSON';
+const CTA_ALERTS_URL = 'https://www.transitchicago.com/api/1.0/alerts.aspx?outputType=JSON';
 
 export async function GET() {
   const controller = new AbortController();
