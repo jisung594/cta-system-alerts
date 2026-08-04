@@ -1,3 +1,5 @@
+'use client';
+
 import { useMemo, useState } from 'react';
 import { MOCK_CTA_ALERTS } from '../../data/mockAlerts';
 import type { CTALine } from '../../types/alerts';
