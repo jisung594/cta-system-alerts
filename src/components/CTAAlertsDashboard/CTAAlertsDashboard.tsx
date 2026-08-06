@@ -1,8 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { MOCK_CTA_ALERTS } from '../../data/mockAlerts';
-import type { CTALine } from '../../types/alerts';
+import { useMemo, useEffect,useState } from 'react';
+import type { CTALine, CTAServiceAlert } from '../../types/alerts';
 import { aggregateAlertsByLine } from '../../utils/chartHelpers';
 import { AlertsBarChart } from '../AlertsBarChart/AlertsBarChart';
 
@@ -59,11 +58,38 @@ const CTAAlertsDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLines, setSelectedLines] = useState<CTALine[]>([]);
 
+  // Live API states
+  const [rawAlerts, setRawAlerts] = useState<CTAServiceAlert[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchLiveAlerts() {
+      try {
+        setLoading(true);
+        const res = await fetch('/api/cta/alerts');
+
+        if (!res.ok) {
+          throw new Error(`Failed to fetch alerts: ${res.statusText}`);
+        }
+
+        const data = await res.json();
+        setRawAlerts(data.alerts || []);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchLiveAlerts();
+  }, []);
+
   // Filter alerts based on search term and selected lines
   const filteredAlerts = useMemo(() => {
     const normalizedQuery = searchTerm.trim().toLowerCase();
 
-    return MOCK_CTA_ALERTS.filter((alert) => {
+    return rawAlerts.filter((alert) => {
       const searchableText = [
         alert.headline,
         alert.shortDescription,
@@ -80,7 +106,7 @@ const CTAAlertsDashboard = () => {
 
       return matchesText && matchesLines;
     });
-  }, [searchTerm, selectedLines]);
+  }, [rawAlerts, searchTerm, selectedLines]);
 
   // Calculate summary statistics
   const totalAlerts = filteredAlerts.length;
@@ -112,9 +138,25 @@ const CTAAlertsDashboard = () => {
   };
 
   // Calculate chart data reactively from filtered alerts
-  const chartData = useMemo(() => {
-    return aggregateAlertsByLine(filteredAlerts);
+  const aggregatedAlerts = useMemo(() => {
+    return aggregateAlertsByLine(filteredAlerts, selectedLines);
   }, [filteredAlerts]);
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-slate-50 text-slate-900 flex items-center justify-center">
+        <p className="text-sm font-medium text-slate-500">Loading live CTA alerts...</p>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="min-h-screen bg-slate-50 text-slate-900 flex items-center justify-center">
+        <p className="text-sm font-medium text-rose-600">Error loading alerts: {error}</p>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
@@ -192,7 +234,7 @@ const CTAAlertsDashboard = () => {
           <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
             <div className="lg:col-span-1">
               <div className="h-64 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <AlertsBarChart data={chartData} />
+                <AlertsBarChart data={aggregatedAlerts} />
               </div>
             </div>
 
