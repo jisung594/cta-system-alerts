@@ -13,7 +13,10 @@ export const CTA_LINE_COLORS: Record<CTALine, string> = {
 };
 
 // Aggregates service alerts by transit line color for Recharts ingestion
-export const aggregateAlertsByLine = (alerts: CTAServiceAlert[]): LineAlertData[] => {
+export const aggregateAlertsByLine = (
+  alerts: CTAServiceAlert[],
+  selectedLines: CTALine[] = []
+): LineAlertData[] => {
   const counts: Record<CTALine, number> = {
     Red: 0,
     Blue: 0,
@@ -45,5 +48,10 @@ export const aggregateAlertsByLine = (alerts: CTAServiceAlert[]): LineAlertData[
       count: counts[line],
       color: CTA_LINE_COLORS[line],
     }))
-    .filter((line) => line.count > 0);
+    .filter((line) => {
+      const hasAlerts = line.count > 0;
+      const matchesFilter = selectedLines.length === 0 || selectedLines.includes(line.line);
+      
+      return hasAlerts && matchesFilter;
+    });
 }
