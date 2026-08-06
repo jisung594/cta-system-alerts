@@ -1,47 +1,27 @@
 import { NextResponse } from 'next/server';
+import type { 
+  AffectedService,
+  CTALine, 
+  CTAServiceAlert, 
+  CTAAlertsAPIResponse 
+} from '@/types/alerts';
 
 const CTA_ALERTS_URL = 'https://www.transitchicago.com/api/1.0/alerts.aspx?outputType=JSON';
 
 type TrainRouteCode = 'Red' | 'Blue' | 'Brn' | 'G' | 'Org' | 'Pnk' | 'P' | 'Y';
 // Official CTA Route Configs: Maps route IDs to display names and brand hex colors
-const LINE_CONFIG: Record<TrainRouteCode, { name: string; color: string }> = {
-  Red: { name: 'Red Line', color: '#c0392b' },
-  Blue: { name: 'Blue Line', color: '#2980b9' },
-  Brn: { name: 'Brown Line', color: '#964B00' },
-  G: { name: 'Green Line', color: '#27ae60' },
-  Org: { name: 'Orange Line', color: '#d35400' },
-  Pnk: { name: 'Pink Line', color: '#e84393' },
-  P: { name: 'Purple Line', color: '#8e44ad' },
-  Y: { name: 'Yellow Line', color: '#f1c40f' },
+const LINE_MAP: Record<string, { line: CTALine; color: string }> = {
+  Red: { line: 'Red', color: '#c0392b' },
+  Blue: { line: 'Blue', color: '#2980b9' },
+  Brn: { line: 'Brown', color: '#964B00' },
+  G: { line: 'Green', color: '#27ae60' },
+  Org: { line: 'Orange', color: '#d35400' },
+  Pnk: { line: 'Pink', color: '#e84393' },
+  P: { line: 'Purple', color: '#8e44ad' },
+  Y: { line: 'Yellow', color: '#f1c40f' },
 };
 
-const TRAIN_ROUTE_CODES = new Set<string>(Object.keys(LINE_CONFIG));
-
-interface CTAAlertsResponse {
-  CTAAlerts?: CTAAlerts;
-}
-
-interface CTAAlerts {
-  Alert?: CTAAlert | CTAAlert[];
-}
-
-interface CTAAlert {
-  AlertId: string;
-  Headline?: string;
-  ShortDescription?: string;
-  ImpactedService?: ImpactedService;
-}
-
-interface ImpactedService {
-  Service?: Service | Service[];
-}
-
-interface Service {
-  ServiceType?: 'R' | 'T' | 'B' | string; // 'R' = Route, 'T' = Station, 'B' = Bus
-  ServiceTypeDescription?: string;
-  ServiceName?: string;
-  ServiceId?: string;
-}
+const TRAIN_ROUTE_CODES = new Set<string>(Object.keys(LINE_MAP));
 
 // Return contract for Frontend / Recharts
 export interface LineAlertSummary {
@@ -67,52 +47,80 @@ export async function GET() {
       );
     }
 
-    const data = (await response.json()) as CTAAlertsResponse;
-    const rawAlerts = data?.CTAAlerts?.Alert;
-    const alerts: CTAAlert[] = Array.isArray(rawAlerts)
-      ? rawAlerts
-      : rawAlerts
-      ? [rawAlerts]
-      : [];
+    const data = (await response.json());
+    const rawAlerts = data?.CTAAlerts?.Alert || [];
+    const alertList = Array.isArray(rawAlerts) ? rawAlerts : [rawAlerts];
 
-    const tally: Record<TrainRouteCode, number> = {
+    // Initialize arrays and counts
+    const detailedAlerts: CTAServiceAlert[] = [];
+
+    const counts: Record<CTALine, number> = {
       Red: 0,
       Blue: 0,
-      Brn: 0,
-      G: 0,
-      Org: 0,
-      Pnk: 0,
-      P: 0,
-      Y: 0,
+      Brown: 0,
+      Green: 0,
+      Orange: 0,
+      Pink: 0,
+      Purple: 0,
+      Yellow: 0,
     };
 
-    alerts.forEach((alert) => {
-      const impactedService = alert?.ImpactedService;
-      const services = impactedService?.Service;
-      const serviceList = Array.isArray(services)
-        ? services
-        : services
-        ? [services]
-        : [];
+    // Transform raw CTA alerts
+    alertList.forEach((alert: any) => {
+      const services = alert?.ImpactedService?.Service || [];
+      const serviceList = Array.isArray(services) ? services : [services];
 
-      serviceList.forEach((service) => {
-        const serviceId = service?.ServiceId;
-        if (service?.ServiceType === 'R' && serviceId && TRAIN_ROUTE_CODES.has(serviceId as TrainRouteCode)) {
-          tally[serviceId as TrainRouteCode] += 1;
+      const affectedServices: AffectedService[] = [];
+
+      serviceList.forEach((service: any) => {
+        const rawCode = service?.ServiceId;
+        
+        if (rawCode && LINE_MAP[rawCode]) {
+          const lineName = LINE_MAP[rawCode].line;
+          counts[lineName] += 1;
+
+          affectedServices.push({
+            serviceType: 'L',
+            lineColor: lineName,
+            routeName: service.ServiceName || `${lineName} Line`,
+            routeId: rawCode,
+          });
+        } else {
+          // Bus or station-level service
+          affectedServices.push({
+            serviceType: 'Bus',
+            routeName: service.ServiceName || 'Bus Route',
+            routeId: service.ServiceId || '',
+          });
         }
       });
+
+      const parsedAlert: CTAServiceAlert = {
+        id: String(alert.AlertId || Math.random()),
+        headline: alert.Headline || 'Transit Alert',
+        shortDescription: alert.ShortDescription || '',
+        fullDescription: alert.FullDescription?.['#cdata-section'] || alert.ShortDescription || '',
+        severity: Number(alert.SeverityScore || 0) >= 10 ? 'critical' : Number(alert.SeverityScore || 0) >= 5 ? 'major' : 'minor',
+        isPlanned: alert.MajorAlert === '0', // 0 = Planned / Standard, 1 = Major / Emergency
+        impactedServices: affectedServices,
+        eventStart: alert.EventStart || '',
+        eventEnd: alert.EventEnd || null,
+      };
+
+      detailedAlerts.push(parsedAlert);
     });
 
-    // Convert tally object into Recharts-ready array
-    const formattedData: LineAlertSummary[] = (
-      Object.keys(LINE_CONFIG) as TrainRouteCode[]
-    ).map((code) => ({
-      line: LINE_CONFIG[code].name,
-      count: tally[code] || 0,
-      color: LINE_CONFIG[code].color,
-    }));
+    // Format final response containing both summaries and detailed alerts
+    const responsePayload: CTAAlertsAPIResponse = {
+      summaries: Object.values(LINE_MAP).map(({ line, color }) => ({
+        line,
+        count: counts[line],
+        color,
+      })),
+      alerts: detailedAlerts,
+    };
 
-    return NextResponse.json(formattedData);
+    return NextResponse.json(responsePayload);
   } catch (error) {
     return NextResponse.json(
       {

@@ -25,3 +25,8 @@ export interface LineAlertData {
   count: number;
   color: string;
 }
+
+export interface CTAAlertsAPIResponse {
+  summaries: LineAlertData[];
+  alerts: CTAServiceAlert[];
+}
