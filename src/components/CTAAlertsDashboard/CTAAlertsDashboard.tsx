@@ -3,7 +3,7 @@
 import { useMemo, useEffect,useState } from 'react';
 import type { CTALine, CTAServiceAlert } from '../../types/alerts';
 import { aggregateAlertsByLine } from '../../utils/chartHelpers';
-import { AlertsBarChart } from '../AlertsBarChart/AlertsBarChart';
+import { AlertsRadialChart } from '../AlertsRadialChart/AlertsRadialChart';
 
 const LINE_STYLES: Record<CTALine, { base: string; active: string; dot: string }> = {
   Red: {
@@ -233,8 +233,9 @@ const CTAAlertsDashboard = () => {
           {/* Two-column layout for charts and alerts list */}
           <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
             <div className="lg:col-span-1">
-              <div className="h-64 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <AlertsBarChart data={aggregatedAlerts} />
+              <div className="h-64 w-full rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p className="text-sm text-slate-400">L Train Alerts</p>
+                <AlertsRadialChart data={aggregatedAlerts} />
               </div>
             </div>
 
