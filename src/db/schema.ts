@@ -5,8 +5,10 @@ import {
   timestamp,
   serial,
   index,
+  check,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 
 // ALERTS TABLE
 export const alerts = pgTable(
@@ -27,8 +29,17 @@ export const alerts = pgTable(
     resolvedAt: timestamp('resolved_at', { withTimezone: true }), // Set when cron job detects an alert has dropped off the feed
   },
   (table) => [
-    index('idx_alerts_first_seen').on(table.firstSeenAt),
-    index('idx_alerts_resolved').on(table.resolvedAt),
+    // Multi-column index for analytics filtering
+    index('idx_alerts_analytics_time').on(
+      table.firstSeenAt,
+      table.resolvedAt,
+      table.severity
+    ),
+    // Enforce valid severity values
+    check(
+      'check_valid_severity',
+      sql`${table.severity} IN ('minor', 'major', 'critical')`
+    ),
   ]
 );
 
@@ -47,7 +58,22 @@ export const alertImpactedServices = pgTable(
     routeId: text('route_id').notNull(),
   },
   (table) => [
-    index('idx_impacted_services_route').on(table.routeId, table.lineColor),
+    // Index on foreign key for faster joins
+    index('idx_impacted_services_alert_id').on(table.alertId),
+
+    // Uniqueness constraint across all 4 key columns
+    uniqueIndex('alert_service_identity').on(
+      table.alertId,
+      table.serviceType,
+      table.routeId,
+      table.lineColor
+    ),
+
+    // Enforce valid service types
+    check(
+      'check_valid_service_type',
+      sql`${table.serviceType} IN ('L', 'Bus')`
+    ),
   ]
 );
 
