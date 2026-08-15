@@ -1,4 +1,4 @@
-import { transformRawAlert } from '@/types/alerts'; // Your raw-to-internal transformer
+import { transformRawAlert } from '@/types/alerts';
 
 const CTA_ALERTS_URL =
   'https://www.transitchicago.com/api/1.0/alerts.aspx?outputType=JSON';
