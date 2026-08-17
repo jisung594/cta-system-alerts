@@ -1,10 +1,9 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "types": ["node"],
     "paths": {
-      "@/*": ["src/*"],
-      "@": ["src"]
+      "@/*": ["./src/*"],
+      "@": ["./src"]
     }
   },
   "files": [],
