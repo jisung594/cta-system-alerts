@@ -37,14 +37,45 @@ export function transformRawAlert(raw: any): CTAServiceAlert {
   const severity: AlertSeverity =
     severityScore >= 10 ? 'critical' : severityScore >= 5 ? 'major' : 'minor';
 
-  const impactedServices: AffectedService[] = Array.isArray(raw?.ImpactedServices)
-    ? raw.ImpactedServices.map((s: any) => ({
-        serviceType: s?.ServiceType === 'Bus' ? 'Bus' : 'L',
-        lineColor: s?.Line || undefined,
-        routeName: s?.RouteName || s?.Line || 'Unknown',
-        routeId: s?.RouteId || s?.Route || '',
-      }))
+  const CTA_COLOR_MAP: Record<string, CTALine> = {
+    red: 'Red',
+    blue: 'Blue',
+    brn: 'Brown', brown: 'Brown',
+    g: 'Green', green: 'Green',
+    org: 'Orange', orange: 'Orange',
+    p: 'Purple', purple: 'Purple',
+    pnk: 'Pink', pink: 'Pink',
+    y: 'Yellow', yel: 'Yellow', yellow: 'Yellow',
+  };
+
+  const rawServiceData = raw?.ImpactedService?.Service;
+  const rawServices = Array.isArray(rawServiceData)
+    ? rawServiceData
+    : rawServiceData
+    ? [rawServiceData]
     : [];
+
+const impactedServices: AffectedService[] = rawServices.map((s: any) => {
+  const isBus = s?.ServiceType === 'Bus';
+  const serviceType: 'L' | 'Bus' = isBus ? 'Bus' : 'L';
+  const rawId = String(s?.ServiceId || '').trim();
+  const rawName = String(s?.ServiceName || '').trim();
+
+  // L trains only
+  const lineColor =
+    rawId && CTA_COLOR_MAP[rawId.toLowerCase()]
+      ? CTA_COLOR_MAP[rawId.toLowerCase()]
+      : undefined;
+
+  const routeId = rawId || rawName;
+
+  return {
+    serviceType,
+    lineColor,
+    routeName: rawName || 'Unknown',
+    routeId,
+  };
+});
 
   return {
     id: String(raw?.AlertId ?? raw?.id ?? ''),
