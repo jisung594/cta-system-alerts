@@ -73,26 +73,20 @@ export async function GET() {
       const affectedServices: AffectedService[] = [];
 
       serviceList.forEach((service: any) => {
-        const rawCode = service?.ServiceId;
+        const rawCode = String(service?.ServiceId ?? '').trim();
         
-        if (rawCode && LINE_MAP[rawCode]) {
-          const lineName = LINE_MAP[rawCode].line;
-          counts[lineName] += 1;
+        const lineColor =
+          rawCode && LINE_MAP[rawCode]
+            ? LINE_MAP[rawCode].line
+            : undefined;
 
-          affectedServices.push({
-            serviceType: 'L',
-            lineColor: lineName,
-            routeName: service.ServiceName || `${lineName} Line`,
-            routeId: rawCode,
-          });
-        } else {
-          // Bus or station-level service
-          affectedServices.push({
-            serviceType: 'Bus',
-            routeName: service.ServiceName || 'Bus Route',
-            routeId: service.ServiceId || '',
-          });
-        }
+        affectedServices.push({
+          serviceType: lineColor ? 'L' : 'Bus',
+          lineColor, // only valid CTA line names, never route names or IDs
+          routeName: service.ServiceName || (lineColor ? `${lineColor} Line` : 'Bus Route'),
+          routeId: rawCode || service.ServiceName || '',
+        });
+
       });
 
       const parsedAlert: CTAServiceAlert = {
