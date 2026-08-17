@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { fetchAndTransformCTAAlerts } from '@/lib/cta';
+import { fetchAndTransformCTAAlerts } from '@/lib/cta-client';
+import { syncAlertsToDatabase } from '@/db/services/ingest';
 
 export async function GET(request: Request) {
   const isDev = process.env.NODE_ENV === 'development';
@@ -20,13 +21,12 @@ export async function GET(request: Request) {
     // Fetches with 10s timeout & transforms via transformRawAlert()
     const alerts = await fetchAndTransformCTAAlerts();
 
-    // TODO: Pass `alerts` to Drizzle database sync transaction
-    // const { processedCount, resolvedCount } = await syncAlertsToDatabase(alerts);
+    const { processedCount, resolvedCount } = await syncAlertsToDatabase(alerts);
 
     return NextResponse.json({
       success: true,
-      processedCount: alerts.length,
-      resolvedCount: 0, // Placeholder until DB sync step
+      processedCount: processedCount,
+      resolvedCount: resolvedCount,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
