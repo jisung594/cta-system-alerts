@@ -35,10 +35,12 @@ export async function GET() {
   const timeoutId = setTimeout(() => controller.abort(), 10000);
 
   try {
-    const response = await fetch(CTA_ALERTS_URL, {
+    const options: RequestInit & { next?: { revalidate?: number } } = {
       next: { revalidate: 30 },
       signal: controller.signal,
-    });
+    };
+
+    const response = await fetch(CTA_ALERTS_URL, options);
 
     if (!response.ok) {
       return NextResponse.json(
