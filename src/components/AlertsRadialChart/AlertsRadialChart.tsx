@@ -1,7 +1,6 @@
 'use client';
 
-import { RadialBarChart, RadialBar, Legend, Tooltip, ResponsiveContainer } from 'recharts';
-import type { LineAlertData } from '@/types/alerts';
+import { RadialBarChart, RadialBar, Tooltip, ResponsiveContainer } from 'recharts';
 
 type AlertsRadialChartData = {
   line: string;
@@ -33,7 +32,7 @@ export function AlertsRadialChart({ data }: AlertsRadialChartProps) {
     return (
       <div className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
         <div className="flex flex-col gap-2 text-sm font-medium text-slate-700">
-          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: point.fill }} />
+          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: point.color }} />
           <span>{point.line} Line</span>
         </div>
         <p className="mt-1 text-sm text-slate-600">Active alerts: {point.count}</p>
